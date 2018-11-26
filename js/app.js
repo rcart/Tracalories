@@ -1,4 +1,63 @@
 // This app is created using JS Module Patern
+const LStorageCtrl = (function() {
+  // Public methods
+  return {
+    storeItem: function(item) {
+      let items = [];
+
+      // Check if there's an item
+      if (localStorage.getItem('items') === null) {
+        // in case there's no LS yet
+        items = [];
+        items.push(item);
+        localStorage.setItem('items', JSON.stringify(items));
+      } else {
+        // When there's already a LS
+        items = JSON.parse(localStorage.getItem('items'));
+        items.push(item);
+        localStorage.setItem('items', JSON.stringify(items));
+      }
+    },
+
+    getItemsFromLS: function() {
+      let items;
+      if (localStorage.getItem('items') === null) {
+        items = [];
+      } else {
+        items = JSON.parse(localStorage.getItem('items'));
+      }
+      return items;
+    },
+
+    updateItemStorage: function(updatedItem) {
+      let items = LStorageCtrl.getItemsFromLS();
+      items.forEach(function(item, index) {
+        if (updatedItem.id === item.id) {
+          // Remove the index item and replace it with the updatedItem
+          items.splice(index, 1, updatedItem);
+        }
+      });
+      // Update LS
+      localStorage.setItem('items', JSON.stringify(items));
+    },
+
+    deleteFromLS: function(id) {
+      let items = LStorageCtrl.getItemsFromLS();
+
+      items.forEach(function(item, index) {
+        if (item.id === id) {
+          items.splice(index, 1);
+        }
+      });
+      // Update LS to remove the item
+      localStorage.setItem('items', JSON.stringify(items));
+    },
+
+    clearAllItemsFromLS: function() {
+      localStorage.removeItem('items');
+    }
+  }
+})();
 
 // Storage Controller
 
@@ -13,7 +72,7 @@ const ItemCtrl = (function() {
 
   // State
   const state =  {
-    items: [],
+    items: LStorageCtrl.getItemsFromLS(),
     currentItem: null,
     totalCalories: 0
   }
@@ -136,6 +195,24 @@ const UICtrl = (function() {
       }
     },
 
+    populateItemsList: function(items) {
+      if (items.length === 0) return;
+      else {
+        let html = '';
+        items.forEach(function(item) {
+          html += `
+            <li class="collection-item" id="item-${item.id}">
+              <strong>${item.name}: </strong> <em>${item.calories}</em>
+              <a href="#" class="secondary-content">
+                <i class="edit-item fa fa-pencil"></i>
+              </a>
+            </li>      
+          `;
+        });
+        document.querySelector(UISelectors.itemList).innerHTML = html;
+      }
+    },
+
     addListItem: function(item) {
       // Display the ul
       document.querySelector(UISelectors.itemList).style.display = 'block';
@@ -234,7 +311,7 @@ const UICtrl = (function() {
 
 
 //App Controller
-const AppCtrl = (function(ItemCtrl, UICtrl) {
+const AppCtrl = (function(ItemCtrl, LStorageCtrl, UICtrl) {
   // Get selectors available on UI
   const UISelectors = UICtrl.getSelectors();
 
@@ -284,6 +361,9 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
 
       // Add totalCalories to the UI
       UICtrl.showTotalCalories(totalCalories);
+      
+      // Store in LS
+      LStorageCtrl.storeItem(newItem);
 
       // Clear inputs
       UICtrl.clearInputs();
@@ -320,6 +400,10 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
 
     UICtrl.updateListItem(updatedItem);
     UICtrl.showTotalCalories(ItemCtrl.getTotalCalories());
+
+    // Update LS too
+    LStorageCtrl.updateItemStorage(updatedItem);
+    
     UICtrl.clearEditState();
     e.preventDefault();
   }
@@ -329,9 +413,10 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
 
     // delete from state and UI
     ItemCtrl.deleteItem(currentItem.id);
-
-
     UICtrl.deleteListItem(currentItem.id);
+
+    // Delete from LS too
+    LStorageCtrl.deleteFromLS(currentItem.id);
     e.preventDefault();
   }
 
@@ -341,6 +426,7 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
     UICtrl.clearItems();
     UICtrl.showTotalCalories(ItemCtrl.getTotalCalories());
     UICtrl.clearEditState();
+    LStorageCtrl.clearAllItemsFromLS();
     UICtrl.hideList();
 
     e.preventDefault();
@@ -360,11 +446,15 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
       // Add UI event listeners
       loadEventListeners();
 
+      // Add LS items, if any
+      UICtrl.populateItemsList(items);
+      UICtrl.showTotalCalories(ItemCtrl.getTotalCalories());
+
       // Set initial focus to Name input
       document.querySelector(UISelectors.itemNameInput).focus();
     }
   }
   
-})(ItemCtrl, UICtrl);
+})(ItemCtrl, LStorageCtrl, UICtrl);
 
 AppCtrl.init();
