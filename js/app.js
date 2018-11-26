@@ -259,7 +259,10 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
     document.querySelector(UISelectors.updateBtn).addEventListener('click', itemUpdateSubmit);
 
     // Back button event
-    document.querySelector(UISelectors.backBtn).addEventListener('click', UICtrl.clearEditState);
+    document.querySelector(UISelectors.backBtn).addEventListener('click', (e) => {
+      UICtrl.clearEditState;
+      e.preventDefault();
+    }
 
     // Delete button event
     document.querySelector(UISelectors.deleteBtn).addEventListener('click', itemDeleteSubmit);
