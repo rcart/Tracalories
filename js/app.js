@@ -340,7 +340,7 @@ const AppCtrl = (function(ItemCtrl, UICtrl) {
     ItemCtrl.clearItemsState();
     UICtrl.clearItems();
     UICtrl.showTotalCalories(ItemCtrl.getTotalCalories());
-    UICtrl.clearInputs();
+    UICtrl.clearEditState();
     UICtrl.hideList();
 
     e.preventDefault();
